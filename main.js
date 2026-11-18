@@ -1,8 +1,39 @@
 (() => {
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const root = document.documentElement;
+  root.classList.add('js');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- 0. Live studio hours (America/New_York) ---------- */
+  /* ---------- 1. Page colour follows the section you're in ---------- */
+  const themed = [...document.querySelectorAll('[data-bg]')];
+  const setTheme = t => { if (root.dataset.theme !== t) root.dataset.theme = t; };
+  setTheme('porcelain');
+  if ('IntersectionObserver' in window) {
+    // A thin band across the middle of the screen decides the colour
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) setTheme(e.target.dataset.bg); });
+    }, { rootMargin: '-48% 0px -48% 0px' });
+    themed.forEach(s => io.observe(s));
+  }
+
+  /* ---------- 2. Statement: split into words for the scroll reveal ---------- */
+  const stmt = document.querySelector('.js-words');
+  if (stmt && !reduce && CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) {
+    const words = stmt.textContent.trim().split(/\s+/);
+    stmt.setAttribute('aria-label', stmt.textContent.trim());
+    stmt.textContent = '';
+    const n = words.length;
+    words.forEach((w, i) => {
+      const s = document.createElement('span');
+      s.className = 'w';
+      s.setAttribute('aria-hidden', 'true');
+      s.textContent = w;
+      const a = 18 + (i / n) * 34;           // words light up across cover 18% → 56%
+      s.style.animationRange = `cover ${a.toFixed(1)}% cover ${(a + 7).toFixed(1)}%`;
+      stmt.append(s, document.createTextNode(i < n - 1 ? ' ' : ''));
+    });
+  }
+
+  /* ---------- 3. Live studio hours (America/New_York) ---------- */
   const HOURS = { 1: [10, 16], 2: [10, 16], 3: [10, 16], 4: [10, 16], 5: [10, 16], 6: [9, 13] };
   const fmt = h => (h > 12 ? h - 12 : h) + (h >= 12 ? ' PM' : ' AM');
   try {
@@ -17,10 +48,12 @@
         el.textContent = 'Open now · until ' + fmt(today[1]);
       } else {
         let d = day, tries = 0, label;
-        do { d = (d + 1) % 7; tries++; } while (!HOURS[d] && tries < 7);
-        if (today && now < today[0]) { d = day; label = 'today'; }
-        else label = tries === 1 ? 'tomorrow' : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d];
-        el.textContent = 'Closed now · opens ' + label + ' at ' + fmt(HOURS[d][0]);
+        if (today && now < today[0]) label = 'today';
+        else {
+          do { d = (d + 1) % 7; tries++; } while (!HOURS[d] && tries < 7);
+          label = tries === 1 ? 'tomorrow' : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d];
+        }
+        el.textContent = 'Opens ' + label + ' ' + fmt(HOURS[d][0]);
         el.classList.add('is-closed');
       }
     }
@@ -29,77 +62,7 @@
     });
   } catch (e) { /* static hours stay visible */ }
 
-  /* ---------- 1. Luxe index: floating image that trails the cursor ---------- */
-  const float = document.querySelector('.float');
-  const floatImg = float && float.querySelector('img');
-  const rows = document.querySelectorAll('.index__row');
-  if (float && fine && window.innerWidth > 760) {
-    let x = 0, y = 0, tx = 0, ty = 0, raf = null, on = false, active = null, mx = 0;
-    const place = () => {
-      if (!active) return;
-      const r = active.getBoundingClientRect(), h = float.offsetHeight, w = float.offsetWidth;
-      ty = r.top - h - 14 > 90 ? r.top - h - 14 : r.bottom + 14;
-      tx = Math.min(Math.max(mx - w / 2, 16), innerWidth - w - 140);
-    };
-    const tick = () => {
-      x += (tx - x) * (reduce ? 1 : 0.14);
-      y += (ty - y) * (reduce ? 1 : 0.14);
-      float.style.transform = `translate(${x}px, ${y}px)`;
-      raf = on || Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(tick) : null;
-    };
-    const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
-    const idx = document.querySelector('.index');
-    idx.addEventListener('mousemove', e => { mx = e.clientX; place(); kick(); });
-    window.addEventListener('scroll', () => { if (on) { place(); kick(); } }, { passive: true });
-    rows.forEach(row => {
-      row.addEventListener('mouseenter', e => {
-        const src = row.dataset.img;
-        if (!floatImg.src.endsWith(src)) floatImg.src = src;
-        active = row; mx = e.clientX; place();
-        if (!on) { x = tx; y = ty; }
-        on = true; float.classList.add('is-on'); kick();
-      });
-    });
-    idx.addEventListener('mouseleave', () => { on = false; active = null; float.classList.remove('is-on'); });
-    rows.forEach(r => { const i = new Image(); i.src = r.dataset.img; });
-  }
-
-  /* ---------- 2. Feed: pinned horizontal scroll ---------- */
-  const track = document.querySelector('.feed__track');
-  const count = document.querySelector('.js-count');
-  const plates = track ? [...track.querySelectorAll('figure.plate')] : [];
-  let pinProg = null;
-  const setCount = () => {
-    const head = document.querySelector('.feed__head').getBoundingClientRect();
-    const left = head.right > 0 && head.right < innerWidth * 0.5 && head.top < innerHeight * 0.5 ? head.right : 0;
-    const mid = (left + innerWidth) / 2;
-    let i = 0, best = Infinity;
-    plates.forEach((p, n) => { const r = p.getBoundingClientRect(); const d = Math.abs(r.left + r.width / 2 - mid); if (d < best) { best = d; i = n; } });
-    if (pinProg !== null) { if (pinProg < 0.03) i = 0; else if (pinProg > 0.97) i = plates.length - 1; }
-    if (count) count.textContent = String(i + 1).padStart(2, '0');
-  };
-  if (track) track.addEventListener('scroll', setCount, { passive: true });
-
-  const initGsap = () => {
-    if (!window.gsap || !window.ScrollTrigger || reduce || !track) return;
-    gsap.registerPlugin(ScrollTrigger);
-    const mm = gsap.matchMedia();
-    mm.add('(min-width: 761px)', () => {
-      track.style.overflow = 'visible';
-      const dist = () => Math.max(0, track.scrollWidth - track.clientWidth);
-      const tween = gsap.to(track, {
-        x: () => -dist(),
-        ease: 'none',
-        onUpdate() { pinProg = this.progress(); setCount(); },
-        scrollTrigger: { trigger: '.feed', pin: '.feed__pin', start: 'top top', end: () => '+=' + dist(), scrub: 0.6, invalidateOnRefresh: true }
-      });
-      return () => { track.style.overflow = ''; tween.kill(); };
-    });
-    window.addEventListener('load', () => ScrollTrigger.refresh());
-  };
-  if (document.readyState === 'complete') initGsap(); else window.addEventListener('load', initGsap);
-
-  /* ---------- smooth in-page anchors ---------- */
+  /* ---------- 4. Smooth in-page anchors ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
     const id = a.getAttribute('href'); const t = id.length > 1 && document.querySelector(id);
     if (!t) return; e.preventDefault();
@@ -107,7 +70,7 @@
     history.replaceState(null, '', id);
   }));
 
-  /* ---------- 3. Wedding inquiry (front-end only; wire to Netlify Forms) ---------- */
+  /* ---------- 5. Wedding inquiry (front-end only; wire to Netlify Forms) ---------- */
   const form = document.querySelector('.form');
   const sent = document.querySelector('.sent');
   if (form) {
@@ -124,7 +87,6 @@
       while (added < 2) { d.setDate(d.getDate() + 1); if (d.getDay() % 6) added++; }
       sent.querySelector('.js-day').textContent = d.toLocaleDateString('en-US', { weekday: 'long' });
       form.hidden = true; sent.hidden = false;
-      sent.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
     });
   }
 })();
