@@ -227,6 +227,11 @@ html:not(.js) .lately{background:var(--blush);color:var(--noir)}
       88%{transform:scale(7);opacity:0}
       100%{transform:scale(7);opacity:0}
     }
+    @media (hover:none), (max-width:760px){
+      .hero{height:230vh}
+      .hero__mask{animation-name:dive-soft}
+      @keyframes dive-soft{0%{transform:scale(1);opacity:1}55%{transform:scale(1.18);opacity:1}100%{transform:scale(1.32);opacity:0}}
+    }
     .hero__img{animation:breathe linear both;animation-timeline:--hero;animation-range:contain 0% contain 80%}
     @keyframes breathe{from{scale:1.32}to{scale:1}}
     .hero__top,.hero__bottom{animation:fade-in 1.4s 1s var(--ease) both, leave linear both;animation-timeline:auto,--hero;animation-range:normal,contain 0% contain 12%}
@@ -348,3 +353,13 @@ html:not(.js) .lately{background:var(--blush);color:var(--noir)}
   .hero__word,.hero__top,.hero__bottom,.hero__cue::after{animation:none}
   .intro{display:none}
 }
+
+/* ===== LITE (diagnostic: ?lite) — no motion at all ===== */
+html.lite *,html.lite *::before,html.lite *::after{animation:none!important;transition:none!important}
+html.lite .hero,html.lite .gallery{height:auto!important}
+html.lite .hero__stage,html.lite .gallery__stage{position:relative!important}
+html.lite .gallery__stage{height:auto!important;display:block!important}
+html.lite .gallery{padding:90px 0 40px!important}
+html.lite .gallery__track{overflow-x:auto!important;width:auto!important;translate:none!important}
+html.lite .hero__mask{transform:none!important}
+html.lite .print{position:relative!important;top:auto!important;margin-bottom:40px!important}

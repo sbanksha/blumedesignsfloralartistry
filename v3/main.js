@@ -1,7 +1,9 @@
 (() => {
   const root = document.documentElement;
   root.classList.add('js');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lite = /[?&]lite\b/.test(location.search);
+  if (lite) root.classList.add('lite');
+  const reduce = lite || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
   const sda = CSS.supports('(animation-timeline: view()) and (animation-range: entry)');
 
