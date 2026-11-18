@@ -356,3 +356,10 @@ html.lite .gallery{padding:90px 0 40px!important}
 html.lite .gallery__track{overflow-x:auto!important;width:auto!important;translate:none!important}
 html.lite .hero__mask{transform:none!important}
 html.lite .print{position:relative!important;top:auto!important;margin-bottom:40px!important}
+
+/* ===== Diagnostics (?t=a|b|c|d) ===== */
+html.no-heroanim .hero__word,html.no-heroanim .hero__top,html.no-heroanim .hero__bottom,html.no-heroanim .hero__cue::after{animation:none!important}
+html.no-sticky .hero{height:auto!important}
+html.no-sticky .hero__stage{position:relative!important}
+html.no-sticky .print{position:relative!important;top:auto!important;margin-bottom:40px!important}
+html.no-sda .w,html.no-sda .unveil img{animation:none!important}

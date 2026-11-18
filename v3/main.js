@@ -3,6 +3,11 @@
   root.classList.add('js');
   const lite = /[?&]lite\b/.test(location.search);
   if (lite) root.classList.add('lite');
+  // Diagnostic flags (?t=a|b|c|d) used to find what crashes iPhone Safari
+  const T = (location.search.match(/[?&]t=([a-z])/) || [])[1];
+  const OFF = { a: ['no-intro'], b: ['no-intro', 'no-heroanim'], c: ['no-intro', 'no-heroanim', 'no-sticky'], d: ['no-sda'] }[T] || [];
+  OFF.forEach(c => root.classList.add(c));
+  const off = c => OFF.includes(c);
   const reduce = lite || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
   const sda = CSS.supports('(animation-timeline: view()) and (animation-range: entry)');
@@ -10,7 +15,7 @@
   /* ---------- 0. Intro curtain (once per visit) ---------- */
   let seen = false;
   try { seen = sessionStorage.getItem('blume-intro') === '1'; sessionStorage.setItem('blume-intro', '1'); } catch (e) {}
-  if (!reduce && !seen) {
+  if (!reduce && !seen && !off('no-intro')) {
     const intro = document.createElement('div');
     intro.className = 'intro';
     intro.setAttribute('aria-hidden', 'true');
@@ -105,7 +110,7 @@
     let ticking = false;
     const frame = () => {
       ticking = false;
-      if (hero && mask) {
+      if (hero && mask && !off('no-heroanim') && !off('no-sticky')) {
         const r = hero.getBoundingClientRect();
         if (r.bottom > 0) {
           const p = clamp(-r.top / Math.max(1, r.height - innerHeight));
