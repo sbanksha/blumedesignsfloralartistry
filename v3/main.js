@@ -58,7 +58,7 @@
 
   /* ---------- 3. Statement: split into words (keeps <em>) ---------- */
   const stmt = document.querySelector('.js-words');
-  if (stmt && !reduce && sda) {
+  if (stmt && !reduce && (fine ? sda : true)) {
     stmt.setAttribute('aria-label', stmt.textContent.replace(/\s+/g, ' ').trim());
     const words = [];
     const walk = (node, into) => {
@@ -77,6 +77,7 @@
     const frag = document.createElement('div'); walk(stmt, frag);
     stmt.replaceChildren(...frag.childNodes);
     words.forEach((s, i) => {
+      s.style.setProperty('--i', i);
       const a = 14 + (i / words.length) * 36;
       s.style.animationRange = `cover ${a.toFixed(1)}% cover ${(a + 9).toFixed(1)}%`;
     });
@@ -137,9 +138,9 @@
     frame();
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { threshold: 0.15 });
-      document.querySelectorAll('.print, .foot__word').forEach(el => io.observe(el));
+      document.querySelectorAll('.print, .foot__word, .unveil, .statement__text').forEach(el => io.observe(el));
     } else {
-      document.querySelectorAll('.print, .foot__word').forEach(el => el.classList.add('is-in'));
+      document.querySelectorAll('.print, .foot__word, .unveil, .statement__text').forEach(el => el.classList.add('is-in'));
     }
   }
 
