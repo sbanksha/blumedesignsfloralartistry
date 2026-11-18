@@ -291,7 +291,7 @@ html:not(.js) .lately{background:var(--blush);color:var(--noir)}
   .nav__right{gap:0}
   .nav__cta{padding:10px 14px;font-size:10px}
 
-  .hero__word{font-size:32vw}
+  .hero__word{font-size:28.5vw}
   .hero__top{top:22%;font-size:9.5px;letter-spacing:.28em}
   .hero__bottom{bottom:84px;flex-direction:column;align-items:center;gap:14px;text-align:center}
   .hero__bottom span:first-child{font-size:24px}
