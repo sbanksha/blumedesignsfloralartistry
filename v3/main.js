@@ -93,6 +93,51 @@
     });
   }
 
+  /* ---------- 4b. Touch motion: JS equivalents of the desktop-only scroll effects ----------
+     iPhone Safari crashed on some CSS scroll-timeline effects, so touch screens drive them here instead. */
+  if (!fine && !reduce) {
+    root.classList.add('touch-motion');
+    const hero = document.querySelector('.hero');
+    const img = document.querySelector('.hero__img');
+    const fades = document.querySelectorAll('.hero__top, .hero__bottom');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+    let ticking = false;
+    const frame = () => {
+      ticking = false;
+      if (hero && mask) {
+        const r = hero.getBoundingClientRect();
+        if (r.bottom > 0) {
+          const p = clamp(-r.top / Math.max(1, r.height - innerHeight));
+          mask.style.opacity = (1 - smooth(0.18, 0.78, p)).toFixed(3);
+          mask.style.transform = `scale(${(1 + 0.3 * p).toFixed(4)})`;
+          if (img) img.style.transform = `scale(${(1.22 - 0.22 * p).toFixed(4)})`;
+          const f = (1 - clamp(p / 0.14)).toFixed(3);
+          fades.forEach(el => { el.style.opacity = f; });
+        }
+      }
+      if (spot) {
+        const r = spot.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < innerHeight) {
+          const p = smooth(0.15, 0.85, (innerHeight - r.top) / (innerHeight + r.height));
+          // path: top-left → middle-right → lower-centre
+          const x = p < 0.5 ? 25 + (70 - 25) * (p / 0.5) : 70 + (38 - 70) * ((p - 0.5) / 0.5);
+          const y = p < 0.5 ? 22 + (48 - 22) * (p / 0.5) : 48 + (78 - 48) * ((p - 0.5) / 0.5);
+          spot.style.setProperty('--x', x.toFixed(1) + '%');
+          spot.style.setProperty('--y', y.toFixed(1) + '%');
+        }
+      }
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+    frame();
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { threshold: 0.15 });
+      document.querySelectorAll('.print, .foot__word').forEach(el => io.observe(el));
+    } else {
+      document.querySelectorAll('.print, .foot__word').forEach(el => el.classList.add('is-in'));
+    }
+  }
+
   /* ---------- 5. Custom cursor ---------- */
   if (fine && !reduce) {
     const c = document.createElement('div'); c.className = 'cursor'; c.setAttribute('aria-hidden', 'true');
